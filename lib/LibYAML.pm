@@ -612,8 +612,7 @@ class LibYAML::Parser
 
     method parse-map()
     {
-        my $d = nativecast(LibYAML::mapping-start-data, $!event);
-        my $anchor = $d.anchor;
+        my $anchor = nativecast(LibYAML::mapping-start-data, $!event).anchor;
         $!event.delete;
 
         my %map;
@@ -672,7 +671,9 @@ class LibYAML::emitter-struct is repr('CPointer')
     sub yaml_emitter_set_output_file(LibYAML::emitter-struct, LibYAML::FILEptr)
         is native(LIB) {*}
 
-    sub yaml_emitter_set_output(LibYAML::emitter-struct, Pointer, uint64)
+    sub yaml_emitter_set_output(LibYAML::emitter-struct,
+                                &callback (uint64, Pointer, size_t --> int32),
+                                uint64)
         is native(LIB) {*}
 
     sub yaml_emitter_set_encoding(LibYAML::emitter-struct, int32)
@@ -708,7 +709,7 @@ class LibYAML::emitter-struct is repr('CPointer')
         yaml_emitter_set_output_file(self, $fp)
     }
 
-    method set-output(&handler, uint64 $id)
+    method set-output(&handler, Int $id)
     {
         yaml_emitter_set_output(self, &handler, $id)
     }
@@ -760,14 +761,29 @@ role LibYAML::Emitable
     method yaml-emit(LibYAML::Emitter) { ... }
 }
 
+my %all-emitters;
+my $emitter-id = 0;
+
+sub emit-string(uint64 $id, Pointer $buffer, size_t $size) returns int32
+{
+    my $emitter = %all-emitters{$id};
+
+    $emitter.buf ~= Blob.new(nativecast(CArray[uint8], $buffer)[0 ..^ $size])
+                    .decode;
+
+    return 1;
+}
+
 class LibYAML::Emitter
 {
+    has $.emitter-id;
     has $.emitter-raw; # Just a place to hold the emitter struct
     has LibYAML::event $.event = LibYAML::event.new;
     has LibYAML::encoding $.encoding;
     has %.objects;
     has %.aliases;
     has $.alias-id;
+    has Str $.buf is rw;
 
     submethod BUILD(LibYAML::encoding :$!encoding = YAML_UTF8_ENCODING,
                     Bool :$canonical = False,
@@ -776,6 +792,9 @@ class LibYAML::Emitter
                     Bool :$unicode = True,
                     LibYAML::break :$break = YAML_LN_BREAK)
     {
+        $!emitter-id = $emitter-id++;
+        %all-emitters{$!emitter-id} = self;
+
         $!emitter-raw = buf8.allocate(yaml_emitter_t_size);
         with self.emitter
         {
@@ -804,6 +823,16 @@ class LibYAML::Emitter
         self.emit-stream(@objects);
     }
 
+    method dump-str(*@objects)
+    {
+        $!buf = '';
+        self.emitter.set-output(&emit-string, $!emitter-id);
+
+        self.emit-stream(@objects);
+
+        return $!buf;
+    }
+
     method emit-stream(@objects)
     {
         $!event.stream-start-event($!encoding);
@@ -811,7 +840,7 @@ class LibYAML::Emitter
 
         for @objects -> $object
         {
-            self.emit-document($object);
+            self.emit-document($object, implicit => @objects.elems == 1);
         }
 
         $!event.stream-end-event();
@@ -829,11 +858,11 @@ class LibYAML::Emitter
         self.anchors($_) for $object.values;
     }
 
-    method emit-document($object)
+    method emit-document($object, Bool :$implicit)
     {
         $!event.document-start-event(LibYAML::version-directive,
                                      LibYAML::tag-directive,
-                                     LibYAML::tag-directive, True);
+                                     LibYAML::tag-directive, $implicit);
         self.emit-event;
 
         %!objects = ();
@@ -949,7 +978,11 @@ class LibYAML::Emitter
         $obj.yaml-emit(self);
     }
 
-    method DESTROY() { self.emitter.delete }
+    method DESTROY()
+    {
+        self.emitter.delete;
+        %all-emitters{$!emitter-id}:delete;
+    }
 }
 
 sub load-yaml(Str $input) is export {
@@ -959,3 +992,12 @@ sub load-yaml(Str $input) is export {
 sub load-yaml-file(Str $filename) is export {
     LibYAML::Parser.new.parse-file($filename)
 }
+
+sub dump-yaml(*@objects, *%opts) is export {
+    LibYAML::Emitter.new(|%opts).dump-str(|@objects)
+}
+
+sub dump-yaml-file(Str $filename, *@objects, *%opts) is export {
+    LibYAML::Emitter.new(|%opts).dump-file($filename, |@objects)
+}
+
