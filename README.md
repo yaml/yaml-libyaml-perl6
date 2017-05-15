@@ -54,13 +54,9 @@ first.  Then you can install LibYAML with zef:
     :mapping-style = YAML_BLOCK_MAPPING_STYLE (default)
                      YAML_FLOW_MAPPING_STYLE
 
-    :header or :!header
+    :header or :!header  Output `---` header (default if more than one object output)
 
-Output `---` header (default if more than one object output)
-
-    :footer or :!footer
-
-Output `...` footer (default false)
+    :footer or :!footer  Output `...` footer (default false)
 
     :canonical or :!canonical
 
