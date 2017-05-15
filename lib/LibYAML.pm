@@ -273,7 +273,7 @@ class LibYAML::event is repr('CStruct')
             or die "Document Start";
     }
 
-    method document-end-event(Bool $implicit = True)
+    method document-end-event(Bool $implicit)
     {
         yaml_document_end_event_initialize(self, $implicit ?? 1 !! 0)
             or die "Document End";
@@ -519,6 +519,7 @@ class LibYAML::Parser
                 when YAML_DOCUMENT_END_EVENT
                 {
                     $!event.delete;
+                    %!anchors = ();
                     return $doc;
                 }
                 default
@@ -761,6 +762,7 @@ role LibYAML::Emitable
     method yaml-emit(LibYAML::Emitter) { ... }
 }
 
+my $lock = Lock.new;
 my %all-emitters;
 my $emitter-id = 0;
 
@@ -784,16 +786,26 @@ class LibYAML::Emitter
     has %.aliases;
     has $.alias-id;
     has Str $.buf is rw;
+    has $.header;
+    has $.footer;
+    has LibYAML::sequence-style $.sequence-style;
+    has LibYAML::mapping-style $.mapping-style;
 
     submethod BUILD(LibYAML::encoding :$!encoding = YAML_UTF8_ENCODING,
-                    Bool :$canonical = False,
-                    Int :$indent = 2,
-                    Int :$width = -1,
-                    Bool :$unicode = True,
-                    LibYAML::break :$break = YAML_LN_BREAK)
+        LibYAML::sequence-style :$!sequence-style = YAML_BLOCK_SEQUENCE_STYLE,
+        LibYAML::mapping-style :$!mapping-style = YAML_BLOCK_MAPPING_STYLE,
+        Bool :$!header = False,
+        Bool :$!footer = False,
+        Bool :$canonical = False,
+        Int :$indent = 2,
+        Int :$width = -1,
+        Bool :$unicode = True,
+        LibYAML::break :$break = YAML_LN_BREAK)
     {
-        $!emitter-id = $emitter-id++;
-        %all-emitters{$!emitter-id} = self;
+        $lock.protect({
+            $!emitter-id = $emitter-id++;
+            %all-emitters{$!emitter-id} = self;
+        });
 
         $!emitter-raw = buf8.allocate(yaml_emitter_t_size);
         with self.emitter
@@ -823,7 +835,7 @@ class LibYAML::Emitter
         self.emit-stream(@objects);
     }
 
-    method dump-str(*@objects)
+    method dump-string(*@objects)
     {
         $!buf = '';
         self.emitter.set-output(&emit-string, $!emitter-id);
@@ -838,9 +850,12 @@ class LibYAML::Emitter
         $!event.stream-start-event($!encoding);
         self.emit-event;
 
+        my $implicit = not $!header;
+        $implicit = False if @objects.elems != 1; # Force header
+
         for @objects -> $object
         {
-            self.emit-document($object, implicit => @objects.elems == 1);
+            self.emit-document($object, :$implicit);
         }
 
         $!event.stream-end-event();
@@ -853,7 +868,7 @@ class LibYAML::Emitter
 
         %!objects{$object.WHICH}++;
 
-        return if %!objects{$object.WHICH} >= 2;
+        return if %!objects{$object.WHICH} > 1;
 
         self.anchors($_) for $object.values;
     }
@@ -871,7 +886,7 @@ class LibYAML::Emitter
         self.anchors($object);
         self.emit-object($object);
 
-        $!event.document-end-event();
+        $!event.document-end-event(not $!footer);
         self.emit-event;
     }
 
@@ -892,7 +907,7 @@ class LibYAML::Emitter
 
     method emit-plain(Str:D $obj, Str :$tag)
     {
-        $!event.scalar-event(Str, $tag, $obj, True, False,
+        $!event.scalar-event(Str, $tag, $obj, True, True,
                              YAML_PLAIN_SCALAR_STYLE);
         self.emit-event;
     }
@@ -920,8 +935,7 @@ class LibYAML::Emitter
             }
         }
 
-        $!event.scalar-event(Str, $tag, $obj, True,
-                             True, $style);
+        $!event.scalar-event(Str, $tag, $obj, True, True, $style);
         self.emit-event;
     }
 
@@ -937,13 +951,12 @@ class LibYAML::Emitter
 
         my $anchor = Str;
 
-        if %!objects{$list.WHICH} >= 2
+        if %!objects{$list.WHICH} > 1
         {
             $anchor = %!aliases{$list.WHICH} = $!alias-id++;
         }
 
-        $!event.sequence-start-event($anchor, $tag, False,
-                                     YAML_BLOCK_SEQUENCE_STYLE);
+        $!event.sequence-start-event($anchor, $tag, False, $!sequence-style);
         self.emit-event;
 
         self.emit-object($_) for $list.list;
@@ -958,13 +971,12 @@ class LibYAML::Emitter
 
         my $anchor = Str;
 
-        if %!objects{$map.WHICH} >= 2
+        if %!objects{$map.WHICH} > 1
         {
             $anchor = %!aliases{$map.WHICH} = $!alias-id++;
         }
 
-        $!event.mapping-start-event($anchor, $tag, False,
-                                    YAML_BLOCK_MAPPING_STYLE);
+        $!event.mapping-start-event($anchor, $tag, False, $!mapping-style);
         self.emit-event;
 
         self.emit-object($_) for $map.kv;
@@ -981,7 +993,7 @@ class LibYAML::Emitter
     method DESTROY()
     {
         self.emitter.delete;
-        %all-emitters{$!emitter-id}:delete;
+        $lock.protect({ %all-emitters{$!emitter-id}:delete });
     }
 }
 
@@ -994,10 +1006,9 @@ sub load-yaml-file(Str $filename) is export {
 }
 
 sub dump-yaml(*@objects, *%opts) is export {
-    LibYAML::Emitter.new(|%opts).dump-str(|@objects)
+    LibYAML::Emitter.new(|%opts).dump-string(|@objects)
 }
 
 sub dump-yaml-file(Str $filename, *@objects, *%opts) is export {
     LibYAML::Emitter.new(|%opts).dump-file($filename, |@objects)
 }
-
