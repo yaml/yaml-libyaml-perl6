@@ -62,7 +62,7 @@ first.  Then you can install LibYAML with zef:
 
     :indent = 2 .. 9 (default 2)
 
-    :width = width of linee, default = -1, infinite
+    :width = width of line, default = -1, infinite
 
     :unicode or :!unicode (default True)
 
