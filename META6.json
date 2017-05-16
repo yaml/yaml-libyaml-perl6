@@ -21,7 +21,7 @@
 
     "test-depends" : [ "Test", "JSON::Fast" ],
 
-    "license" : "BSD-2-Clause",
+    "license" : "Artistic-2.0",
 
     "authors" : [ "Curt Tilmes <curt@tilmes.org>" ],
 
