@@ -11,7 +11,7 @@ my $parser = LibYAML::Parser.new;
 
 my $emitter = LibYAML::Emitter.new;
 
-plan 252;
+plan 383;
 
 for <
 229Q 3MYT 5BVJ 6FWR 735Y 87E4 9J7A AZW3 CUP7 EW3V GT5M J9HZ L94M MJS9
@@ -55,7 +55,7 @@ TL85
         is-deeply $obj, $json-obj, "$test Compare with JSON";
     }
 
-    my $str = $emitter.dump-string($obj);
+    ok my $str = $emitter.dump-string($obj);
 
 }
 
