@@ -27,6 +27,6 @@
 
     "support" : {
       "source" : "https://github.com/CurtTilmes/perl6-libyaml.git",
-      "bugtracker" : "https://github.com/CurtTilmes/perl6-libyaml.git"
+      "bugtracker" : "https://github.com/CurtTilmes/perl6-libyaml/issues"
     }
 }
