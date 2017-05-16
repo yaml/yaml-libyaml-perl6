@@ -448,10 +448,16 @@ class LibYAML::Parser
     has $.encoding;
     has %.anchors;
 
-    submethod BUILD()
+    method init()
     {
         $!parser-raw = buf8.allocate(yaml_parser_t_size);
         self.parser.init;
+    }
+
+    method delete()
+    {
+        self.parser.delete;
+        $!parser-raw = Any;
     }
 
     method parser() { nativecast(LibYAML::parser-struct, $!parser-raw) }
@@ -461,6 +467,9 @@ class LibYAML::Parser
     method parse-string(Str $str, Str $encoding = 'utf-8')
     {
         my $buf = $str.encode($encoding);
+
+        self.init;
+        LEAVE self.delete;
 
         self.parser.set-input-string($buf);
 
@@ -472,6 +481,9 @@ class LibYAML::Parser
         my $fh = LibYAML::FILEptr.open($filename, "rb");
 
         LEAVE .close with $fh;
+
+        self.init;
+        LEAVE self.delete;
 
         self.parser.set-input-file($fh);
 
@@ -633,8 +645,6 @@ class LibYAML::Parser
             %map{$key} = $value;
         }
     }
-
-    method DESTROY() { self.parser.delete }
 }
 
 class LibYAML::emitter-error is repr('CStruct')
@@ -781,26 +791,22 @@ class LibYAML::Emitter
     has $.emitter-id;
     has $.emitter-raw; # Just a place to hold the emitter struct
     has LibYAML::event $.event = LibYAML::event.new;
-    has LibYAML::encoding $.encoding;
     has %.objects;
     has %.aliases;
     has $.alias-id;
     has Str $.buf is rw;
-    has $.header;
-    has $.footer;
-    has LibYAML::sequence-style $.sequence-style;
-    has LibYAML::mapping-style $.mapping-style;
+    has LibYAML::encoding $.encoding = YAML_UTF8_ENCODING;
+    has LibYAML::sequence-style $.sequence-style = YAML_BLOCK_SEQUENCE_STYLE;
+    has LibYAML::mapping-style $.mapping-style = YAML_BLOCK_MAPPING_STYLE;
+    has Bool $.header = False;
+    has Bool $.footer = False;
+    has Bool $.canonical = False;
+    has Int $.indent = 2;
+    has Int $.width = -1;
+    has Bool $.unicode = True;
+    has LibYAML::break $.break = YAML_LN_BREAK;
 
-    submethod BUILD(LibYAML::encoding :$!encoding = YAML_UTF8_ENCODING,
-        LibYAML::sequence-style :$!sequence-style = YAML_BLOCK_SEQUENCE_STYLE,
-        LibYAML::mapping-style :$!mapping-style = YAML_BLOCK_MAPPING_STYLE,
-        Bool :$!header = False,
-        Bool :$!footer = False,
-        Bool :$canonical = False,
-        Int :$indent = 2,
-        Int :$width = -1,
-        Bool :$unicode = True,
-        LibYAML::break :$break = YAML_LN_BREAK)
+    method init()
     {
         $lock.protect({
             $!emitter-id = $emitter-id++;
@@ -812,12 +818,19 @@ class LibYAML::Emitter
         {
             .init;
             .set-encoding($!encoding);
-            .set-canonical($canonical);
-            .set-indent($indent);
-            .set-width($width);
-            .set-unicode($unicode);
-            .set-break($break);
+            .set-canonical($!canonical);
+            .set-indent($!indent);
+            .set-width($!width);
+            .set-unicode($!unicode);
+            .set-break($!break);
         }
+    }
+
+    method delete()
+    {
+        self.emitter.delete;
+        $!emitter-raw = Any;
+        $lock.protect({ %all-emitters{$!emitter-id}:delete });
     }
 
     method emitter() { nativecast(LibYAML::emitter-struct, $!emitter-raw) }
@@ -830,6 +843,9 @@ class LibYAML::Emitter
 
         LEAVE .close with $fh;
 
+        self.init;
+        LEAVE self.delete;
+
         self.emitter.set-output-file($fh);
 
         self.emit-stream(@objects);
@@ -838,6 +854,10 @@ class LibYAML::Emitter
     method dump-string(*@objects)
     {
         $!buf = '';
+
+        self.init;
+        LEAVE self.delete;
+
         self.emitter.set-output(&emit-string, $!emitter-id);
 
         self.emit-stream(@objects);
@@ -988,12 +1008,6 @@ class LibYAML::Emitter
     multi method emit-object(LibYAML::Emitable $obj)
     {
         $obj.yaml-emit(self);
-    }
-
-    method DESTROY()
-    {
-        self.emitter.delete;
-        $lock.protect({ %all-emitters{$!emitter-id}:delete });
     }
 }
 
