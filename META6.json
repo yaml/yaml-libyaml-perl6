@@ -1,6 +1,10 @@
 {
     "name" : "LibYAML",
 
+    "description" : "Perl6 bindings for LibYAML",
+
+    "auth" : "github:CurtTilmes",
+
     "version" : "0.1",
 
     "source-url" : "https://github.com/CurtTilmes/perl6-libyaml.git",
@@ -15,13 +19,11 @@
 
     "depends" : [ "NativeCall" ],
 
-    "description" : "Perl6 bindings for LibYAML",
-
     "test-depends" : [ "Test", "JSON::Fast" ],
 
-    "license" : "NASA-1.3",
+    "license" : "BSD-2-Clause",
 
-    "authors" : [ "Curt Tilmes <Curt.Tilmes@nasa.gov>" ],
+    "authors" : [ "Curt Tilmes <curt@tilmes.org>" ],
 
     "support" : {
       "source" : "https://github.com/CurtTilmes/perl6-libyaml.git",
