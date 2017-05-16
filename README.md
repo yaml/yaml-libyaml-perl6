@@ -11,6 +11,18 @@ first. Then you can install LibYAML with zef:
 
     zef install LibYAML
 
+## Install from Sources
+
+You can install this LibYAML module from source (optionally also using the
+libyaml C code sources) like this:
+
+    $ git clone https://github.com/CurtTilmes/perl6-libyaml
+    $ git clone https://github.com/yaml/libyaml
+    $ (cd libyaml; make -f .makefile)
+    $ export LD_LIBRARY_PATH=$PWD/libyaml/src/.libs
+    $ cd perl6-libyaml
+    $ zef install .
+
 # Examples
 
 ## Simple
