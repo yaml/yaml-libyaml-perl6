@@ -1,0 +1,30 @@
+{
+    "name" : "LibYAML",
+
+    "version" : "0.1",
+
+    "source-url" : "https://github.com/CurtTilmes/perl6-libyaml.git",
+
+    "perl" : "6.c",
+
+    "tags" : [ "LibYAML", "YAML", "format", "serialization" ],
+
+    "provides" : {
+        "LibYAML"  : "lib/LibYAML.pm6"
+    },
+
+    "depends" : [ "NativeCall" ],
+
+    "description" : "Perl6 bindings for LibYAML",
+
+    "test-depends" : [ "Test", "JSON::Fast" ],
+
+    "license" : "NASA-1.3",
+
+    "authors" : [ "Curt Tilmes <Curt.Tilmes@nasa.gov>" ],
+
+    "support" : {
+      "source" : "https://github.com/CurtTilmes/perl6-libyaml.git",
+      "bugtracker" : "https://github.com/CurtTilmes/perl6-libyaml.git"
+    }
+}
