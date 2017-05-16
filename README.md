@@ -21,7 +21,7 @@ first.  Then you can install LibYAML with zef:
 
     my $object = load-yaml-file("/my/file.yml");
 
-    my $yaml-str dump-yaml($object [, $object2, ...], ...options...);
+    my $yaml-str = dump-yaml($object [, $object2, ...], ...options...);
 
     dump-yaml-file("/my/file.yml", $object [, $object2, ...], ...options...);
 
