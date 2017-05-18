@@ -1,6 +1,6 @@
 # Perl6 LibYAML
 
-[![Build Status](https://travis-ci.org/CurtTilmes/perl6-libyaml.svg)](https://travis-ci.org/CurtTilmes/perl6-libyaml)
+[![Build Status](https://travis-ci.org/yaml/yaml-libyaml-perl6.svg)](https://travis-ci.org/yaml/yaml-libyaml-perl6)
 
 A [Perl 6](https://perl6.org/) interface to
 [LibYAML](https://github.com/yaml/libyaml), a [YAML](http://yaml.org/)
