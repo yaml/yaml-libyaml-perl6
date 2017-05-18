@@ -7,7 +7,7 @@
 
     "version" : "0.1",
 
-    "source-url" : "https://github.com/CurtTilmes/perl6-libyaml.git",
+    "source-url" : "https://github.com/yaml/yaml-libyaml-perl6.git",
 
     "perl" : "6.c",
 
@@ -23,10 +23,11 @@
 
     "license" : "Artistic-2.0",
 
-    "authors" : [ "Curt Tilmes <curt@tilmes.org>" ],
+    "authors" : [ "Curt Tilmes <ctilmes@cpan.org>",
+                  "Ingy döt Net <ingy@cpan.org>" ],
 
     "support" : {
-      "source" : "https://github.com/CurtTilmes/perl6-libyaml.git",
-      "bugtracker" : "https://github.com/CurtTilmes/perl6-libyaml/issues"
+      "source" : "https://github.com/yaml/yaml-libyaml-perl6.git",
+      "bugtracker" : "https://github.com/yaml/yaml-libyaml-perl6/issues"
     }
 }
