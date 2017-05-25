@@ -138,28 +138,20 @@ class LibYAML::Parser
 
         $!event.delete;
 
+        my $sstyle = $style == YAML_PLAIN_SCALAR_STYLE
+            ?? "plain"
+            !! $style == YAML_SINGLE_QUOTED_SCALAR_STYLE
+            ?? "single"
+            !! $style == YAML_DOUBLE_QUOTED_SCALAR_STYLE
+            ?? 'double'
+            !! $style == YAML_LITERAL_SCALAR_STYLE
+            ?? "literal"
+            !! $style == YAML_FOLDED_SCALAR_STYLE
+            ?? "folded" !! "unknown";
         $.loader.scalar-event(
-            %( value => $scalar, anchor => $anchor ), self
+            %( value => $scalar, anchor => $anchor, style => $sstyle ),
+            self,
         );
-        return $style != YAML_PLAIN_SCALAR_STYLE
-            ?? $scalar
-            !! do given $scalar
-            {
-                when ''|'null'                        { Any }
-
-                when 'true'                           { True }
-
-                when 'false'                          { False }
-
-                when /^[<[-+]>? <[0..9]>+         |
-                       0o <[0..7]>+               |
-                       0x <[0..9a..fA..F]>+ ]$/       { .Int }
-
-                when /^<[-+]>? [ 0 | <[0..9]>*]
-                       '.' <[0..9]>+ $/               { .Rat }
-
-                default                               { $_ }
-            }
     }
 
     method parse-sequence()
