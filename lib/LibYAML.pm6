@@ -447,6 +447,8 @@ class LibYAML::Parser
     has LibYAML::event $.event = LibYAML::event.new;
     has $.encoding;
     has %.anchors;
+    has $.loader;
+    has $.reader;
 
     method init()
     {
@@ -461,6 +463,11 @@ class LibYAML::Parser
     }
 
     method parser() { nativecast(LibYAML::parser-struct, $!parser-raw) }
+
+    method parse-input() {
+        my Str $str = $.reader.read;
+        $.loader.data = self.parse-string($str);
+    }
 
     method parse-event() { self.parser.parse($!event) }
 
