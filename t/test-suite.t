@@ -45,8 +45,9 @@ TL85
         next;
     }
 
-    ok my $obj = $parser.parse-file($testdir.child('in.yaml').Str),
+    ok my $docs = $parser.parse-file($testdir.child('in.yaml').Str),
        "$test Parse";
+    my $obj = $docs[0];
 
     if $testdir.child('in.json').e
     {

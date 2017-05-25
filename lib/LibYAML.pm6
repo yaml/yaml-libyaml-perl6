@@ -517,7 +517,7 @@ class LibYAML::Parser
                 when YAML_STREAM_END_EVENT
                 {
                     $!event.delete;
-                    return @docs.elems == 1 ?? @docs[0] !! @docs;
+                    return @docs;
                 }
                 default
                 {
