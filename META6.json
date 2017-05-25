@@ -14,7 +14,9 @@
     "tags" : [ "LibYAML", "YAML", "format", "serialization" ],
 
     "provides" : {
-        "LibYAML"  : "lib/LibYAML.pm6"
+        "LibYAML"  : "lib/LibYAML.pm6",
+        "LibYAML::Parser"  : "lib/LibYAML/Parser.pm6",
+        "LibYAML::Emitter"  : "lib/LibYAML/Emitter.pm6"
     },
 
     "depends" : [ "NativeCall" ],
