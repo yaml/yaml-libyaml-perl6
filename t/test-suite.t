@@ -36,7 +36,7 @@ TL85
 
     if $testdir.child('error').e
     {
-        say $testdir.child('in.yaml').Str;
+        diag "$test ERROR";
 
         throws-like { $parser.parse-file($testdir.child('in.yaml').Str) },
                     X::LibYAML::Parser-Error,
@@ -56,7 +56,7 @@ TL85
         is-deeply $obj, $json-obj, "$test Compare with JSON";
     }
 
-    ok my $str = $emitter.dump-string($obj);
+    ok my $str = $emitter.dump-string($obj), "$test Dump";
 
 }
 
