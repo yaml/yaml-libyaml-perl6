@@ -446,7 +446,6 @@ class LibYAML::Parser
     has $.parser-raw;  # Just a place to hold the parser struct
     has LibYAML::event $.event = LibYAML::event.new;
     has $.encoding;
-    has %.anchors;
     has $.loader;
     has $.reader;
 
@@ -466,7 +465,7 @@ class LibYAML::Parser
 
     method parse-input() {
         my Str $str = $.reader.read;
-        $.loader.data = self.parse-string($str);
+        self.parse-string($str);
     }
 
     method parse-event() { self.parser.parse($!event) }
@@ -504,7 +503,6 @@ class LibYAML::Parser
         $!encoding = $!event.data.stream-start.encoding;
         $!event.delete;
 
-        my @docs;
         loop
         {
             self.parse-event;
@@ -512,12 +510,13 @@ class LibYAML::Parser
             {
                 when YAML_DOCUMENT_START_EVENT
                 {
-                    @docs.push: self.parse-document
+                    $.loader.document-start-event(%(), self);
+                    self.parse-document
                 }
                 when YAML_STREAM_END_EVENT
                 {
                     $!event.delete;
-                    return @docs;
+                    return;
                 }
                 default
                 {
@@ -530,20 +529,19 @@ class LibYAML::Parser
     method parse-document()
     {
         $!event.delete;
-        my $doc;
         loop {
             self.parse-event;
             given $!event.type
             {
                 when YAML_DOCUMENT_END_EVENT
                 {
+                    $.loader.document-end-event(%(), self);
                     $!event.delete;
-                    %!anchors = ();
-                    return $doc;
+                    return;
                 }
                 default
                 {
-                    $doc = self.parse-node;
+                    self.parse-node;
                 }
             }
         }
@@ -564,11 +562,13 @@ class LibYAML::Parser
     method parse-alias()
     {
         LEAVE $!event.delete;
-        return %!anchors{nativecast(LibYAML::alias-data, $!event).anchor};
+        my $name = nativecast(LibYAML::alias-data, $!event).anchor;
+        $.loader.alias-event(%( alias => $name ), self);
     }
 
     method parse-scalar()
     {
+        my $anchor = nativecast(LibYAML::sequence-start-data, $!event).anchor;
         my $d = nativecast(LibYAML::scalar-event-data, $!event);
 
         my $style = $d.style;
@@ -577,6 +577,9 @@ class LibYAML::Parser
 
         $!event.delete;
 
+        $.loader.scalar-event(
+            %( value => $scalar, anchor => $anchor ), self
+        );
         return $style != YAML_PLAIN_SCALAR_STYLE
             ?? $scalar
             !! do given $scalar
@@ -601,43 +604,40 @@ class LibYAML::Parser
     method parse-sequence()
     {
         my $anchor = nativecast(LibYAML::sequence-start-data, $!event).anchor;
+        $.loader.sequence-start-event(%( anchor => $anchor ), self);
         $!event.delete;
-
-        my @seq;
 
         loop
         {
             self.parse-event;
             if $!event.type ~~ YAML_SEQUENCE_END_EVENT
             {
+                $.loader.sequence-end-event(%(), self);
                 $!event.delete;
-                %!anchors{$anchor} = @seq if $anchor;
-                return @seq;
+                return;
             }
-            @seq.push: self.parse-node;
+            self.parse-node;
         }
     }
 
     method parse-map()
     {
         my $anchor = nativecast(LibYAML::mapping-start-data, $!event).anchor;
+        $.loader.mapping-start-event(%( anchor => $anchor ), self);
         $!event.delete;
-
-        my %map;
 
         loop
         {
             self.parse-event;
             if $!event.type ~~ YAML_MAPPING_END_EVENT
             {
+                $.loader.mapping-end-event(%(), self);
                 $!event.delete;
-                %!anchors{$anchor} = %map if $anchor;
-                return %map;
+                return;
             }
             my $key = self.parse-node;
             self.parse-event;
             my $value = self.parse-node;
-            %map{$key} = $value;
         }
     }
 }
