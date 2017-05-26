@@ -63,6 +63,7 @@ class LibYAML::Parser
         die unless $!event.type ~~ YAML_STREAM_START_EVENT;
         $!encoding = $!event.data.stream-start.encoding;
         $!event.delete;
+        $.loader.stream-start-event(%(), self);
 
         loop
         {
@@ -77,6 +78,7 @@ class LibYAML::Parser
                 when YAML_STREAM_END_EVENT
                 {
                     $!event.delete;
+                    $.loader.stream-end-event(%(), self);
                     return;
                 }
                 default
