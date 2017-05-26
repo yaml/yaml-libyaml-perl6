@@ -108,6 +108,8 @@ class LibYAML::document-start is repr('CStruct')
     has LibYAML::tag-directive $.start;
     has LibYAML::tag-directive $.end;
     has int32 $.implicit;
+
+    method implicit() { Bool($!implicit) }
 }
 
 class LibYAML::document-end is repr('CStruct')

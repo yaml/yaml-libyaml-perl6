@@ -72,7 +72,10 @@ class LibYAML::Parser
             {
                 when YAML_DOCUMENT_START_EVENT
                 {
-                    $.loader.document-start-event(%(), self);
+                    my $implicit = nativecast(LibYAML::document-start, $!event).implicit;
+                    $.loader.document-start-event(
+                        %( implicit => $implicit ), self
+                    );
                     self.parse-document
                 }
                 when YAML_STREAM_END_EVENT
@@ -98,7 +101,10 @@ class LibYAML::Parser
             {
                 when YAML_DOCUMENT_END_EVENT
                 {
-                    $.loader.document-end-event(%(), self);
+                    my $implicit = nativecast(LibYAML::document-end, $!event).implicit;
+                    $.loader.document-end-event(
+                        %( implicit => $implicit ), self
+                    );
                     $!event.delete;
                     return;
                 }
@@ -131,8 +137,9 @@ class LibYAML::Parser
 
     method parse-scalar()
     {
-        my $anchor = nativecast(LibYAML::sequence-start-data, $!event).anchor;
         my $d = nativecast(LibYAML::scalar-event-data, $!event);
+        my $anchor = $d.anchor;
+        my $tag = $d.tag;
 
         my $style = $d.style;
 
@@ -151,15 +158,24 @@ class LibYAML::Parser
             !! $style == YAML_FOLDED_SCALAR_STYLE
             ?? "folded" !! "unknown";
         $.loader.scalar-event(
-            %( value => $scalar, anchor => $anchor, style => $sstyle ),
+            %(
+                value => $scalar,
+                anchor => $anchor,
+                style => $sstyle,
+                tag => $tag,
+            ),
             self,
         );
     }
 
     method parse-sequence()
     {
-        my $anchor = nativecast(LibYAML::sequence-start-data, $!event).anchor;
-        $.loader.sequence-start-event(%( anchor => $anchor ), self);
+        my $d = nativecast(LibYAML::sequence-start-data, $!event);
+        my $anchor = $d.anchor;
+        my $tag = $d.tag;
+        $.loader.sequence-start-event(
+            %( anchor => $anchor, tag => $tag ), self
+        );
         $!event.delete;
 
         loop
@@ -177,8 +193,12 @@ class LibYAML::Parser
 
     method parse-map()
     {
-        my $anchor = nativecast(LibYAML::mapping-start-data, $!event).anchor;
-        $.loader.mapping-start-event(%( anchor => $anchor ), self);
+        my $d = nativecast(LibYAML::mapping-start-data, $!event);
+        my $anchor = $d.anchor;
+        my $tag = $d.tag;
+        $.loader.mapping-start-event(
+            %( anchor => $anchor, tag => $tag ), self
+        );
         $!event.delete;
 
         loop
