@@ -3,14 +3,27 @@ use NativeCall;
 
 class LibYAML::Emitter {...}
 
-role LibYAML::Emitable
-{
+role LibYAML::Emitable {
     method yaml-emit(LibYAML::Emitter) { ... }
 }
 
+my $lock = Lock.new;
 
-class LibYAML::Emitter
+my %all-emitters;
+my $emitter-id = 0;
+
+sub emit-string(uint64 $id, Pointer $buffer, size_t $size) returns int32
 {
+    my $emitter = %all-emitters{$id};
+
+    $emitter.buf ~= Blob.new(nativecast(CArray[uint8], $buffer)[0 ..^ $size])
+                    .decode;
+
+    return 1;
+}
+
+class LibYAML::Emitter {
+    use LibYAML;
     has $.emitter-id;
     has $.emitter-raw; # Just a place to hold the emitter struct
     has LibYAML::event $.event = LibYAML::event.new;
@@ -74,7 +87,7 @@ class LibYAML::Emitter
         self.emit-stream(@objects);
     }
 
-    method dump-string(**@objects)
+    method dump-string(*@objects)
     {
         $!buf = '';
 

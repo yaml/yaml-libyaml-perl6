@@ -561,20 +561,6 @@ class LibYAML::emitter-struct is repr('CPointer')
     method delete() { yaml_emitter_delete(self) }
 }
 
-my $lock = Lock.new;
-my %all-emitters;
-my $emitter-id = 0;
-
-sub emit-string(uint64 $id, Pointer $buffer, size_t $size) returns int32
-{
-    my $emitter = %all-emitters{$id};
-
-    $emitter.buf ~= Blob.new(nativecast(CArray[uint8], $buffer)[0 ..^ $size])
-                    .decode;
-
-    return 1;
-}
-
 sub load-yaml(Str $input) is export {
     LibYAML::Parser.new.parse-string($input)
 }
