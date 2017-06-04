@@ -87,6 +87,74 @@ class LibYAML::Emitter {
         self.emit-stream(@objects);
     }
 
+    method set-output-string {
+        self.emitter.set-output(&emit-string, $!emitter-id);
+    }
+
+    method stream-start-event {
+        $!event.stream-start-event($!encoding);
+        self.emit-event;
+    }
+
+    method stream-end-event {
+        $!event.stream-end-event();
+        self.emit-event;
+    }
+
+    method document-start-event(Bool $implicit) {
+        $!event.document-start-event(
+            LibYAML::version-directive,
+            LibYAML::tag-directive,
+            LibYAML::tag-directive,
+            $implicit,
+        );
+        self.emit-event;
+    }
+
+    method document-end-event(Bool $implicit) {
+        $!event.document-end-event($implicit);
+        #$!event.document-end-event(not $!footer);
+        self.emit-event;
+    }
+
+    my %styles = %(
+        plain => YAML_PLAIN_SCALAR_STYLE,
+        single => YAML_SINGLE_QUOTED_SCALAR_STYLE,
+        double => YAML_DOUBLE_QUOTED_SCALAR_STYLE,
+        literal => YAML_LITERAL_SCALAR_STYLE,
+        folded => YAML_FOLDED_SCALAR_STYLE,
+    );
+
+    method scalar-event(Str $anchor, Str $tag, Str $value, Str $sstyle) {
+        my $style = %styles{ $sstyle };
+        $!event.scalar-event($anchor, $tag, $value, True, True, $style);
+        self.emit-event;
+    }
+
+    method alias-event(Str $alias) {
+        self.emit-alias($alias);
+    }
+
+    method mapping-start-event(Str $anchor, Str $tag) {
+        $!event.mapping-start-event($anchor, $tag, False, $!mapping-style);
+        self.emit-event;
+    }
+
+    method mapping-end-event {
+        $!event.mapping-end-event;
+        self.emit-event;
+    }
+
+    method sequence-start-event(Str $anchor, Str $tag) {
+        $!event.sequence-start-event($anchor, $tag, False, $!sequence-style);
+        self.emit-event;
+    }
+
+    method sequence-end-event {
+        $!event.sequence-end-event;
+        self.emit-event;
+    }
+
     method dump-string(*@objects)
     {
         $!buf = '';
