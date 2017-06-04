@@ -16,7 +16,9 @@
     "provides" : {
         "LibYAML"  : "lib/LibYAML.pm6",
         "LibYAML::Parser"  : "lib/LibYAML/Parser.pm6",
-        "LibYAML::Emitter"  : "lib/LibYAML/Emitter.pm6"
+        "LibYAML::Emitter"  : "lib/LibYAML/Emitter.pm6",
+        "LibYAML::Loader::Event"  : "lib/LibYAML/Loader/Event.pm6",
+        "LibYAML::Loader::TestSuite"  : "lib/LibYAML/Loader/TestSuite.pm6"
     },
 
     "depends" : [ "NativeCall" ],
@@ -26,7 +28,8 @@
     "license" : "Artistic-2.0",
 
     "authors" : [ "Curt Tilmes <ctilmes@cpan.org>",
-                  "Ingy döt Net <ingy@cpan.org>" ],
+                  "Ingy döt Net <ingy@cpan.org>",
+                  "Tina Müller <tinita@cpan.org>" ],
 
     "support" : {
       "source" : "https://github.com/yaml/yaml-libyaml-perl6.git",
