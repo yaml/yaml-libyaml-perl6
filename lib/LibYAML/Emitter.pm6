@@ -123,6 +123,7 @@ class LibYAML::Emitter {
         double => YAML_DOUBLE_QUOTED_SCALAR_STYLE,
         literal => YAML_LITERAL_SCALAR_STYLE,
         folded => YAML_FOLDED_SCALAR_STYLE,
+        any => YAML_ANY_SCALAR_STYLE,
     );
 
     method scalar-event(Str $anchor, Str $tag, Str $value, Str $sstyle) {
