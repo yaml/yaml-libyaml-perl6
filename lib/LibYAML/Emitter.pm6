@@ -128,7 +128,12 @@ class LibYAML::Emitter {
 
     method scalar-event(Str $anchor, Str $tag, Str $value, Str $sstyle) {
         my $style = %styles{ $sstyle };
-        $!event.scalar-event($anchor, $tag, $value, True, True, $style);
+        if (defined $tag) {
+            $!event.scalar-event($anchor, $tag, $value, False, False, $style);
+        }
+        else {
+            $!event.scalar-event($anchor, $tag, $value, True, True, $style);
+        }
         self.emit-event;
     }
 
