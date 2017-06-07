@@ -93,14 +93,14 @@ for @tests.sort -> $test {
                 if ($ev ~~ m/^\-\-\-/) {
                     $implicit = False;
                 }
-                $emitter.document-start-event($implicit);
+                $emitter.document-start-event(implicit => $implicit);
             }
             when '-DOC' {
                 my $implicit = True;
                 if ($ev ~~ m/^\.\.\./) {
                     $implicit = False;
                 }
-                $emitter.document-end-event($implicit);
+                $emitter.document-end-event(implicit => $implicit);
             }
             when '+MAP' {
                 my Str $anchor;
@@ -112,7 +112,9 @@ for @tests.sort -> $test {
                 if ($ev ~~ s/^\<(\S+)\>\s*//) {
                     $tag = $0.Str;
                 }
-                $emitter.mapping-start-event($anchor, $tag);
+                $emitter.mapping-start-event(
+                    anchor => $anchor, tag => $tag,
+                );
             }
             when '-MAP' {
                 $emitter.mapping-end-event();
@@ -127,7 +129,9 @@ for @tests.sort -> $test {
                 if ($ev ~~ s/^\<(\S+)\>\s*//) {
                     $tag = $0.Str;
                 }
-                $emitter.sequence-start-event($anchor, $tag);
+                $emitter.sequence-start-event(
+                    anchor => $anchor, tag => $tag,
+                );
             }
             when '-SEQ' {
                 $emitter.sequence-end-event();
@@ -159,7 +163,12 @@ for @tests.sort -> $test {
                 elsif ($style eq 'literal') {
                     $value ~~ s:g/\\\\/\\/;
                 }
-                $emitter.scalar-event($anchor, $tag, $value, $style);
+                $emitter.scalar-event(
+                    value => $value,
+                    anchor => $anchor,
+                    tag => $tag,
+                    style => $style,
+                );
             }
             when '=ALI' {
                 my Str $alias;
@@ -172,8 +181,8 @@ for @tests.sort -> $test {
 
     }
 #    $emitter.stream-start-event;
-#    $emitter.document-start-event(True);
-#    $emitter.scalar-event("anchor", "!tag", "foo");
+#    $emitter.document-start-event(implicit => True);
+#    $emitter.scalar-event(value => "foo", anchor => "anchor", tag => "!tag");
 #    $emitter.document-end-event();
 #    $emitter.stream-end-event;
     $emitter.delete;
